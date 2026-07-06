@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -13,17 +13,19 @@ import "../styles/IncluirProdutos.css";
 function IncluirProdutos() {
   const navigate = useNavigate();
   
-  // ⚠️ ATENÇÃO: Ajuste esta URL para a rota correta do seu backend
-  const API_URL = "http://localhost:3000/entradas";
+  const API_URL = "http://localhost:3000/cadastra/compras";
 
   const estadoInicial = {
-    produto: "",
-    quantidade: "",
-    custo: "",
-    observacoes: ""
+  id_produto: "",
+  id_fornecedor: "",
+  quantidade: "",
+  custo: "",
+  observacoes: ""
   };
 
   const [form, setForm] = useState(estadoInicial);
+  const [produtos, setProdutos] = useState([]);
+  const [fornecedores, setFornecedores] = useState([]);
   const [toast, setToast] = useState(null);
 
   function showToast(msg, type = "success") {
@@ -38,9 +40,69 @@ function IncluirProdutos() {
     });
   }
 
+  async function carregarProdutos() {
+  const token = localStorage.getItem("token");
+
+  try {
+    const response = await fetch(
+      "http://localhost:3000/cadastra/produtos",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Erro ao carregar produtos");
+    }
+
+    const data = await response.json();
+
+    setProdutos(data);
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao carregar produtos.", "error");
+  }
+  }
+
+  async function carregarFornecedores() {
+  const token = localStorage.getItem("token");
+
+  try {
+    const response = await fetch(
+      "http://localhost:3000/cadastra/fornecedores",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Erro ao carregar fornecedores");
+    }
+
+    const data = await response.json();
+
+    setFornecedores(data);
+
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao carregar fornecedores.", "error");
+  }
+  }
+
+  useEffect(() => {
+  carregarProdutos();
+  carregarFornecedores();
+  }, []);
+
   async function handleSubmit(e) {
     e.preventDefault();
     const token = localStorage.getItem("token");
+
+    console.log("TOKEN:", token);
 
     try {
       const response = await fetch(API_URL, {
@@ -49,8 +111,17 @@ function IncluirProdutos() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(form)
+        body: JSON.stringify({
+        id_produto: parseInt(form.id_produto),
+        id_fornecedor: parseInt(form.id_fornecedor),
+        quantidade: parseInt(form.quantidade),
+        custo: parseFloat(form.custo),
+        observacoes: form.observacoes,
+      })
       });
+
+      const data = await response.json();
+      console.log(data);
 
       if (response.status === 401) {
         showToast("Sessão expirada. Faça login novamente.", "error");
@@ -59,7 +130,7 @@ function IncluirProdutos() {
       }
 
       if (!response.ok) {
-        throw new Error("Erro na requisição");
+        throw new Error(data.erro || "Erro na requisição");
       }
 
       showToast("Entrada de estoque registrada com sucesso!");
@@ -90,15 +161,54 @@ function IncluirProdutos() {
               <label className="form-label">
                 <PackagePlus size={18} /> Nome / ID do Produto
               </label>
-              <input 
-                className="form-input" 
-                name="produto" 
-                value={form.produto}
-                placeholder="Ex: Capa Protetora Transparente" 
-                onChange={handleChange} 
-                required 
-              />
+              <select
+                className="form-input"
+                name="id_produto"
+                value={form.id_produto}
+                onChange={handleChange}
+                required
+              >
+                <option value="" disabled>
+                  Selecione um produto...
+                </option>
+
+                {produtos.map((produto) => (
+                  <option
+                    key={produto.id_produto}
+                    value={produto.id_produto}
+                  >
+                    {produto.nome}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            <div className="form-group span-2">
+            <label className="form-label">
+              Fornecedor
+            </label>
+
+            <select
+              className="form-input"
+              name="id_fornecedor"
+              value={form.id_fornecedor}
+              onChange={handleChange}
+              required
+            >
+              <option value="">
+                Selecione um fornecedor...
+              </option>
+
+              {fornecedores.map((fornecedor) => (
+                <option
+                  key={fornecedor.id_fornecedor}
+                  value={fornecedor.id_fornecedor}
+                >
+                  {fornecedor.nome}
+                </option>
+              ))}
+            </select>
+          </div>
 
             <div className="form-group">
               <label className="form-label">

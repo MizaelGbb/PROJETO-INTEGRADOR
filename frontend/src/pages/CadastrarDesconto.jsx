@@ -79,47 +79,87 @@ function CadastrarDesconto() {
   }
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    const token = localStorage.getItem("token");
+  e.preventDefault();
+  const token = localStorage.getItem("token");
 
-    // Limpa os campos da modalidade que NÃO foi escolhida antes de enviar para a API
-    const payload = {
+  try {
+    // 1️⃣ PRIMEIRO: cria o desconto (TABELA PAI)
+    const payloadDesconto = {
       data_inicio: form.data_inicio,
       data_fim: form.data_fim,
       publico: form.publico,
       tipo_desconto: form.tipo_desconto,
-      ...(form.tipo_desconto === "categoria" 
-        ? { id_categoria: form.id_categoria, porcentagem_desconto: form.porcentagem_desconto }
-        : { id_produto: form.id_produto, novo_valor: form.novo_valor }
-      )
     };
 
-    try {
-      const response = await fetch(API_URL, {
+    const resDesconto = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payloadDesconto),
+    });
+
+    if (resDesconto.status === 401) {
+      showToast("Sem autorização", "error");
+      return;
+    }
+
+    if (!resDesconto.ok) throw new Error("Erro ao criar desconto");
+
+    const descontoCriado = await resDesconto.json();
+
+    const id_desconto = descontoCriado.id_desconto;
+
+    // 2️⃣ SEGUNDO: cria a especialização
+    if (form.tipo_desconto === "categoria") {
+      const payloadCategoria = {
+        id_desconto,
+        id_categoria: form.id_categoria,
+        porcentagem_desconto: form.porcentagem_desconto,
+      };
+
+      const resCat = await fetch("http://localhost:3000/cadastra/descontos-categoria", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payloadCategoria),
       });
 
-      if (response.status === 401) {
-        showToast("Você não tem permissão para fazer isso.", "error");
-        return;
-      }
-
-      if (!response.ok) throw new Error("Erro na requisição");
-
-      showToast("Desconto cadastrado com sucesso!");
-      setForm(estadoInicial);
-      carregarDescontos();
-
-    } catch (err) {
-      showToast("Erro ao cadastrar desconto", "error");
+      if (!resCat.ok) throw new Error("Erro ao criar desconto categoria");
     }
-  }
 
+    if (form.tipo_desconto === "produto") {
+      const payloadProduto = {
+        id_desconto,
+        id_produto: form.id_produto,
+        novo_valor: form.novo_valor,
+      };
+
+      const resProd = await fetch("http://localhost:3000/cadastra/descontos-produto", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payloadProduto),
+      });
+
+      if (!resProd.ok) throw new Error("Erro ao criar desconto produto");
+    }
+
+    // sucesso final
+    showToast("Desconto cadastrado com sucesso!");
+    setForm(estadoInicial);
+    carregarDescontos();
+
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao cadastrar desconto", "error");
+  }
+}
   return (
     <div className="container">
       {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}

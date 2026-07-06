@@ -1,23 +1,72 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, CheckCircle, Trash2, Search } from "lucide-react";
-import "../styles/RealizarVenda.css"; // Certifique-se de que o nome do arquivo CSS bate com o seu
+import "../styles/RealizarVenda.css";
 
 export default function RealizarVenda() {
   const navigate = useNavigate();
 
   const [inputValue, setInputValue] = useState("");
   const [items, setItems] = useState([]);
+  const [cpf, setCpf] = useState("");
+  const [cliente, setCliente] = useState(null);
 
-  // URL do backend integrada aos produtos
-  const API_URL = "http://localhost:3000/cadastra/produtos";
+  const API_PRODUTOS = "http://localhost:3000/cadastra/produtos";
+  const API_CLIENTES = "http://localhost:3000/cadastra/clientes";
+
+  // 🔍 BUSCAR CLIENTE PELO CPF
+  const buscarCliente = async () => {
+    if (!cpf.trim()) return;
+
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(API_CLIENTES, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        alert("Sessão expirada.");
+        navigate("/login");
+        return;
+      }
+
+      const data = await response.json();
+
+      const clientes = Array.isArray(data)
+        ? data
+        : data.clientes || data.data || [];
+
+      const encontrado = clientes.find(
+        (c) => c.cpf.replace(/\D/g, "") === cpf.replace(/\D/g, "")
+      );
+
+      if (!encontrado) {
+        alert("Cliente não encontrado");
+        setCliente(null);
+        return;
+      }
+
+      // 🔍 LOG ESTRATÉGICO: Abra o F12 no navegador para conferir este objeto!
+      console.log("DADOS DO CLIENTE ENCONTRADO:", encontrado);
+
+      setCliente(encontrado);
+      alert(`Cliente encontrado com sucesso!`);
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao buscar cliente");
+    }
+  };
+
+  // ➕ ADICIONAR PRODUTO
   const handleAddItem = async () => {
     if (!inputValue.trim()) return;
 
     let productCode = inputValue.trim();
     let quantity = 1;
 
-    // Lógica para capturar multiplicador (ex: *2 1001 ou 2* 1001)
     if (productCode.includes("*")) {
       const parts = productCode.split("*");
 
@@ -33,24 +82,29 @@ export default function RealizarVenda() {
     const token = localStorage.getItem("token");
 
     try {
-      // Busca o produto no banco de dados passando o Token JWT
-      const response = await fetch(`${API_URL}/${productCode}`, {
+      const response = await fetch(API_PRODUTOS, {
         headers: {
-          "Authorization": `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.status === 401) {
-        alert("Sessão expirada. Faça login novamente.");
+        alert("Sessão expirada.");
         navigate("/login");
         return;
       }
 
-      if (!response.ok) {
-        throw new Error("Produto não encontrado");
-      }
+      if (!response.ok) throw new Error("Erro ao buscar produtos");
 
-      const product = await response.json();
+      const produtos = await response.json();
+
+      const product = produtos.find(
+        (p) =>
+          p.id_produto.toString() === productCode ||
+          p.nome.toLowerCase().includes(productCode.toLowerCase())
+      );
+
+      if (!product) throw new Error("Produto não encontrado");
 
       setItems((prev) => [
         ...prev,
@@ -64,7 +118,6 @@ export default function RealizarVenda() {
       ]);
 
       setInputValue("");
-
     } catch (error) {
       console.error(error);
       alert(`Produto não encontrado: ${productCode}`);
@@ -73,50 +126,65 @@ export default function RealizarVenda() {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleAddItem();
-    }
+    if (e.key === "Enter") handleAddItem();
   };
 
   const removeItem = (id) => {
     setItems(items.filter((item) => item.id !== id));
   };
 
+  // 💰 FINALIZAR VENDA
   async function finalizarVenda() {
-  const token = localStorage.getItem("token");
-  const id_usuario = localStorage.getItem("id_usuario");
+    const token = localStorage.getItem("token");
 
-  try {
-    const response = await fetch("http://localhost:3000/cadastra/vendas", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        id_usuario,
-        forma_de_pagamento: "Dinheiro", // depois podemos deixar o usuário escolher
-        valor_total: total,
-        produtos: items,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Erro ao finalizar venda");
+    if (!cliente) {
+      alert("Busque um cliente pelo CPF antes de finalizar");
+      return;
     }
 
-    alert("Venda realizada com sucesso!");
+    const valorTotalVenda = items.reduce(
+      (acc, item) => acc + item.quantity * item.unitPrice,
+      0
+    );
 
-    setItems([]);
-    setInputValue("");
+    const produtosFormatados = items.map((item) => ({
+      id_produto: item.id_produto,
+      quantidade: item.quantity,
+    }));
 
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao finalizar venda.");
+    try {
+      const response = await fetch("http://localhost:3000/cadastra/vendas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          // 🛡️ MALHA DE SEGURANÇA: Garante o envio do ID correto independentemente do mapeamento
+          id_usuario: cliente.id_usuario || cliente.id_cliente || cliente.id, 
+          forma_de_pagamento: "Dinheiro",
+          valor_total: valorTotalVenda,
+          produtos: produtosFormatados,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.erro || "Erro ao finalizar venda");
+      }
+
+      alert("Venda realizada com sucesso!");
+
+      setItems([]);
+      setInputValue("");
+      setCliente(null);
+      setCpf("");
+    } catch (err) {
+      console.error(err);
+      alert(`Erro ao finalizar venda: ${err.message}`);
+    }
   }
-}
 
-  // Cálculo do Total
   const total = items.reduce(
     (acc, item) => acc + item.quantity * item.unitPrice,
     0
@@ -124,7 +192,6 @@ export default function RealizarVenda() {
 
   return (
     <div className="venda-page-wrapper">
-      
       {/* HEADER */}
       <div className="venda-header">
         <button onClick={() => navigate("/menu")} className="venda-back-btn">
@@ -136,11 +203,29 @@ export default function RealizarVenda() {
       </div>
 
       <div className="venda-main-card">
-
         {/* COLUNA ESQUERDA (Lista e Busca) */}
         <div className="venda-col-left">
+          {/* CPF */}
+          <div className="venda-search-container">
+            <input
+              type="text"
+              placeholder="Digite o CPF do cliente"
+              value={cpf}
+              onChange={(e) => setCpf(e.target.value)}
+              className="venda-input"
+            />
+            <button onClick={buscarCliente} className="venda-include-btn">
+              Buscar Cliente
+            </button>
+          </div>
 
-          {/* INPUT DE BUSCA */}
+          {cliente && (
+            <p style={{ marginBottom: "15px", fontWeight: "bold", color: "#1e66ff" }}>
+              ✓ Cliente Selecionado — ID: {cliente.id_usuario || cliente.id_cliente || cliente.id} | Nome: {cliente.nome || "N/A"} | CPF: {cliente.cpf}
+            </p>
+          )}
+
+          {/* INPUT DE BUSCA PRODUTO */}
           <div className="venda-search-container">
             <div className="venda-input-wrapper">
               <Search size={20} className="venda-search-icon" />
@@ -160,7 +245,7 @@ export default function RealizarVenda() {
             </button>
           </div>
 
-          {/* TABELA / CONTAINER DOS ITENS */}
+          {/* TABELA DOS ITENS */}
           <div className="venda-table-container">
             <table className="venda-table">
               <thead>
@@ -188,9 +273,9 @@ export default function RealizarVenda() {
                     <tr key={item.id}>
                       <td className="text-center font-bold">{item.quantity}</td>
                       <td>{item.name}</td>
-                      <td>R$ {item.unitPrice.toFixed(2).replace('.', ',')}</td>
+                      <td>R$ {item.unitPrice.toFixed(2).replace(".", ",")}</td>
                       <td className="font-bold">
-                        R$ {(item.quantity * item.unitPrice).toFixed(2).replace('.', ',')}
+                        R$ {(item.quantity * item.unitPrice).toFixed(2).replace(".", ",")}
                       </td>
                       <td>
                         <button onClick={() => removeItem(item.id)} className="venda-delete-btn">
@@ -207,12 +292,11 @@ export default function RealizarVenda() {
 
         {/* COLUNA DIREITA (Logo e Totalizadores) */}
         <div className="venda-col-right">
-
           {/* BOX DO LOGO */}
           <div className="venda-logo-box">
             <div className="venda-avatar-wrapper">
               <img
-                src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150" 
+                src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150"
                 alt="Logo TechStore"
                 className="venda-avatar-img"
               />
@@ -223,10 +307,10 @@ export default function RealizarVenda() {
           {/* BOX DO TOTAL */}
           <div className="venda-total-box">
             <p className="venda-total-label">VALOR TOTAL DA COMPRA</p>
-            <h2 className="venda-total-value">R$ {total.toFixed(2).replace('.', ',')}</h2>
+            <h2 className="venda-total-value">R$ {total.toFixed(2).replace(".", ",")}</h2>
 
             <button
-              disabled={items.length === 0}
+              disabled={items.length === 0 || !cliente}
               className="venda-finish-btn"
               onClick={finalizarVenda}
             >
@@ -235,7 +319,6 @@ export default function RealizarVenda() {
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );
