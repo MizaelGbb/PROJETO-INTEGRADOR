@@ -1,0 +1,293 @@
+/* Reset estrutural básico para garantir as fontes do layout */
+.venda-page-wrapper {
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 32px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+/* Header */
+.venda-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.venda-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.venda-back-btn:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.venda-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+/* Card Principal Branco */
+.venda-main-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  gap: 32px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+/* Divisões de Coluna */
+.venda-col-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.venda-col-right {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Input de busca e botão incluir */
+.venda-search-container {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.venda-input-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.venda-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.venda-input {
+  width: 100%;
+  border: 2px solid #3b82f6; /* Borda azul idêntica à imagem */
+  border-radius: 10px;
+  padding: 12px 16px 12px 44px;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.venda-input::placeholder {
+  color: #94a3b8;
+}
+
+.venda-include-btn {
+  background-color: #1e66ff;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.venda-include-btn:hover {
+  background-color: #1552cd;
+}
+
+/* Container da Tabela */
+.venda-table-container {
+  flex: 1;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 380px;
+  background-color: #ffffff;
+}
+
+.venda-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.venda-table thead {
+  background-color: #e2e8f0; /* Cor cinza do cabeçalho da tabela */
+}
+
+.venda-table th {
+  padding: 14px 18px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.venda-table td {
+  padding: 14px 18px;
+  color: #334155;
+  font-size: 15px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.font-bold { font-weight: 700; }
+.text-center { text-align: center; }
+
+.venda-delete-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+.venda-delete-btn:hover {
+  background-color: #fee2e2;
+}
+
+/* Estado Vazio (Nenhum item adicionado) */
+.venda-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+  color: #94a3b8;
+}
+
+.venda-empty-icon {
+  margin-bottom: 16px;
+  color: #cbd5e1;
+}
+
+.venda-empty-state p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Box da Logomarca (Direita Superior) */
+.venda-logo-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  background-color: #ffffff;
+}
+
+.venda-avatar-wrapper {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  margin: 0 auto 20px auto;
+  overflow: hidden;
+  border: 4px solid #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.venda-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.venda-store-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+/* Box de Fechamento / Total (Direita Inferior) */
+.venda-total-box {
+  background-color: #111827; /* Fundo escuro idêntico ao print */
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.venda-total-label {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0 0 8px 0;
+}
+
+.venda-total-value {
+  color: #10b981; /* Verde brilhante da imagem */
+  font-size: 36px;
+  font-weight: 800;
+  margin: 0 0 24px 0;
+}
+
+.venda-finish-btn {
+  width: 100%;
+  background-color: #334155; /* Cor acinzentada quando desabilitado/neutro */
+  color: #94a3b8;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.venda-finish-btn:not(:disabled) {
+  background-color: #3b82f6; /* Se houver itens na lista ele fica azul destacável */
+  color: #ffffff;
+}
+
+.venda-finish-btn:not(:disabled):hover {
+  background-color: #2563eb;
+}
+
+.venda-finish-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Responsividade Básica */
+@media (max-width: 1024px) {
+  .venda-main-card {
+    flex-direction: column;
+  }
+  .venda-col-right {
+    width: 100%;
+  }
+}

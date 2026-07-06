@@ -1,0 +1,128 @@
+.container {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 40px;
+  background: #ffffff;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 35px;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: 30px;
+  color: #1a2a3a;
+}
+
+.voltarBtn {
+  background: #1e66ff;
+  color: white;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: .2s;
+}
+
+.voltarBtn:hover {
+  background: #174dc0;
+}
+
+.cards {
+  display: grid;
+  gap: 25px;
+}
+
+.card {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 5px 12px rgba(0,0,0,.08);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.cardHeader h2 {
+  margin: 0;
+  color: #1a2a3a;
+}
+
+.valor {
+  background: #00a862;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 25px;
+  font-weight: bold;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.table th {
+  background: #1e66ff;
+  color: white;
+  padding: 12px;
+  text-align: left;
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.table tr:hover {
+  background: #f8f9fc;
+}
+
+.erro {
+  color: red;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.semHistorico {
+  text-align: center;
+  padding: 80px;
+  font-size: 22px;
+  color: #777;
+  background: #fafafa;
+  border-radius: 15px;
+  border: 2px dashed #ccc;
+}
+
+@media (max-width: 768px) {
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .table {
+    display: block;
+    overflow-x: auto;
+  }
+}
