@@ -1,3 +1,4 @@
+
 const { Venda, VendaProduto, Produto, sequelize } = require("../../models");
 
 // listar
@@ -30,7 +31,11 @@ async function criar(req, res) {
       produtos,
     } = req.body;
 
-    // cria a venda
+    if (!produtos || produtos.length === 0) {
+      throw new Error("Venda sem produtos");
+    }
+
+    // 1️⃣ cria a venda
     const novaVenda = await Venda.create(
       {
         id_usuario,
@@ -40,20 +45,13 @@ async function criar(req, res) {
       { transaction }
     );
 
-    // percorre todos os produtos vendidos
+    // 2️⃣ processa produtos
     for (const item of produtos) {
 
-      // salva na tabela venda_produto
-      await VendaProduto.create(
-        {
-          id_venda: novaVenda.id_venda,
-          id_produto: item.id_produto,
-          quantidade: item.quantity,
-        },
-        { transaction }
-      );
+      // 🔥 CORREÇÃO AQUI
+      const quantidade = item.quantidade;
 
-      // busca o produto
+      // busca produto
       const produto = await Produto.findByPk(item.id_produto, {
         transaction,
       });
@@ -62,16 +60,25 @@ async function criar(req, res) {
         throw new Error("Produto não encontrado.");
       }
 
-      // verifica estoque
-      if (produto.quantidade_atual < item.quantity) {
+      // valida estoque
+      if (produto.quantidade_atual < quantidade) {
         throw new Error(`Estoque insuficiente para ${produto.nome}`);
       }
 
-      // baixa o estoque
+      // 3️⃣ salva na tabela venda_produto
+      await VendaProduto.create(
+        {
+          id_venda: novaVenda.id_venda,
+          id_produto: item.id_produto,
+          quantidade: quantidade,
+        },
+        { transaction }
+      );
+
+      // 4️⃣ baixa estoque
       await produto.update(
         {
-          quantidade_atual:
-            produto.quantidade_atual - item.quantity,
+          quantidade_atual: produto.quantidade_atual - quantidade,
         },
         { transaction }
       );
@@ -82,7 +89,6 @@ async function criar(req, res) {
     return res.status(201).json(novaVenda);
 
   } catch (err) {
-
     await transaction.rollback();
 
     return res.status(400).json({

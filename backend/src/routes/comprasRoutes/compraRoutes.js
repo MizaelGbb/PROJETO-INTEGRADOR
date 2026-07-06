@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const passport = require("../config/passport");
+const passport = require("../../config/passport");
 const controller = require("../../controllers/Compras/compraController");
 
 const autenticar = passport.authenticate("jwt", { session: false });

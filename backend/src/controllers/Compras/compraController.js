@@ -1,11 +1,11 @@
-const { Compra, fornecedor } = require("../../models");
+const { Compra, CompraProduto, Produto, Fornecedor } = require("../../models");
 
 // LISTAR TODAS
 const listar = async (req, res) => {
   try {
     const compras = await Compra.findAll({
       include: {
-        model: fornecedor,
+        model: Fornecedor,
         as: "fornecedor",
       },
     });
@@ -23,7 +23,7 @@ const buscar = async (req, res) => {
 
     const compra = await Compra.findByPk(id, {
       include: {
-        model: fornecedor,
+        model: Fornecedor,
         as: "fornecedor",
       },
     });
@@ -41,21 +41,56 @@ const buscar = async (req, res) => {
 // CRIAR
 const criar = async (req, res) => {
   try {
-    const { data, forma_de_pagamento, valor_total, id_fornecedor } = req.body;
+    const {
+      id_produto,
+      id_fornecedor,
+      quantidade,
+      custo,
+      observacoes,
+    } = req.body;
 
+    // Busca o produto
+    const produto = await Produto.findByPk(id_produto);
+
+    if (!produto) {
+      return res.status(404).json({
+        erro: "Produto não encontrado",
+      });
+    }
+
+    // Cria a compra
     const novaCompra = await Compra.create({
-      data,
-      forma_de_pagamento,
-      valor_total,
+      data: new Date(),
+      forma_de_pagamento: observacoes || "Entrada de estoque",
+      valor_total: custo * quantidade,
       id_fornecedor,
     });
 
-    return res
-      .status(201)
-      .set("Location", `/api/compras/${novaCompra.id_compra}`)
-      .json(novaCompra);
-  } catch (erro) {
-    return res.status(500).json({ erro: "Erro ao criar compra" });
+    // Relaciona produto e compra
+    await CompraProduto.create({
+      id_compra: novaCompra.id_compra,
+      id_produto,
+      quantidade,
+    });
+
+    // Atualiza o estoque
+    await produto.update({
+      quantidade_atual:
+        produto.quantidade_atual + Number(quantidade),
+    });
+
+    return res.status(201).json({
+      mensagem: "Entrada registrada com sucesso.",
+    });
+
+} catch (erro) {
+  console.error("========== ERRO AO CRIAR COMPRA ==========");
+  console.error(erro);
+
+  return res.status(500).json({
+    erro: erro.message,
+    detalhe: erro,
+  });
   }
 };
 
