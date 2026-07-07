@@ -18,19 +18,6 @@ async function buscar(req, res) {
   res.status(200).json(descontoProduto);
 }
 
-// criar
-async function criar(req, res) {
-  try {
-    const novoDescontoProduto = await DescontoProduto.create(req.body);
-
-    res
-      .status(201)
-      .set("Location", "/api/descontos-produto/" + novoDescontoProduto.id_desconto)
-      .json(novoDescontoProduto);
-  } catch (err) {
-    res.status(400).json({ erro: err.message });
-  }
-}
 
 // atualizar
 async function atualizar(req, res) {
@@ -63,7 +50,6 @@ async function remover(req, res) {
 module.exports = {
   listar,
   buscar,
-  criar,
   atualizar,
   remover,
 };

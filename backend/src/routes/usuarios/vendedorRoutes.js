@@ -5,7 +5,8 @@ const controller = require("../../controllers/usuarios/vendedorController");
 
 const autenticar = passport.authenticate("jwt", { session: false });
 
-router.post("/vendedores", controller.criar);
+
+router.post("/vendedores", autenticar, controller.registrarFuncionario);
 
 router.get("/vendedores", autenticar, controller.listar);
 router.get("/vendedores/:id", autenticar, controller.buscar);

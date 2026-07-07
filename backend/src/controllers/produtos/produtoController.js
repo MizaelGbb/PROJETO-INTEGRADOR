@@ -4,25 +4,87 @@ const {
   Compra,
   Venda,
   DescontoProduto,
+  Desconto,
+  DescontoCategoria
 } = require("../../models");
 
-// LISTAR TODOS
-const listar = async (req, res) => {
+const { Op } = require("sequelize");
+
+// 🔥 LISTAR COM DESCONTO
+async function listar(req, res) {
   try {
+    const hoje = new Date();
+
     const produtos = await Produto.findAll({
       include: [
-        { model: Categoria, as: "categoria" },
-        { model: DescontoProduto, as: "descontos" },
-      ],
+        { model: Categoria, as: "categoria" }
+      ]
     });
 
-    return res.json(produtos);
-  } catch (erro) {
-    return res.status(500).json({ erro: "Erro ao listar produtos" });
-  }
-};
+    const resultado = [];
 
-// BUSCAR POR ID
+    for (const produto of produtos) {
+
+      let precoOriginal = produto.valor_final;
+      let precoFinal = produto.valor_final;
+      let descontoAplicado = null;
+
+      // 🔹 DESCONTO POR PRODUTO
+      const descProduto = await DescontoProduto.findOne({
+        where: { id_produto: produto.id_produto },
+        include: [{
+          model: Desconto,
+          as: "dadosDesconto",
+          where: {
+            data_inicio: { [Op.lte]: hoje },
+            data_fim: { [Op.gte]: hoje }
+          }
+        }]
+      });
+
+      if (descProduto) {
+        precoFinal = descProduto.novo_valor;
+        descontoAplicado = "produto";
+
+      } else {
+        // 🔹 DESCONTO POR CATEGORIA
+        const descCategoria = await DescontoCategoria.findOne({
+          where: { id_categoria: produto.id_categoria },
+          include: [{
+            model: Desconto,
+            as: "dadosDesconto",
+            where: {
+              data_inicio: { [Op.lte]: hoje },
+              data_fim: { [Op.gte]: hoje }
+            }
+          }]
+        });
+
+        if (descCategoria) {
+          precoFinal = precoOriginal - (
+            precoOriginal * (descCategoria.porcentagem_desconto / 100)
+          );
+          descontoAplicado = "categoria";
+        }
+      }
+
+      resultado.push({
+        ...produto.toJSON(),
+        preco_original: precoOriginal,
+        preco_final: precoFinal,
+        desconto_aplicado: descontoAplicado
+      });
+    }
+
+    res.json(resultado);
+
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+}
+
+
+// 🔹 BUSCAR POR ID
 const buscar = async (req, res) => {
   try {
     const { id } = req.params;
@@ -46,7 +108,8 @@ const buscar = async (req, res) => {
   }
 };
 
-// CRIAR
+
+// 🔹 CRIAR
 const criar = async (req, res) => {
   try {
     const {
@@ -69,8 +132,8 @@ const criar = async (req, res) => {
 
     return res
       .status(201)
-      .set("Location", `/api/produtos/${novoProduto.id_produto}`)
       .json(novoProduto);
+
   } catch (erro) {
     return res.status(500).json({
       erro: erro.errors?.[0]?.message || "Erro ao criar produto",
@@ -78,7 +141,8 @@ const criar = async (req, res) => {
   }
 };
 
-// ATUALIZAR
+
+// 🔹 ATUALIZAR
 const atualizar = async (req, res) => {
   try {
     const { id } = req.params;
@@ -108,6 +172,7 @@ const atualizar = async (req, res) => {
     });
 
     return res.json(produto);
+
   } catch (erro) {
     return res.status(500).json({
       erro: erro.errors?.[0]?.message || "Erro ao atualizar produto",
@@ -115,7 +180,8 @@ const atualizar = async (req, res) => {
   }
 };
 
-// REMOVER
+
+// 🔹 REMOVER
 const remover = async (req, res) => {
   try {
     const { id } = req.params;
@@ -129,10 +195,12 @@ const remover = async (req, res) => {
     await produto.destroy();
 
     return res.status(204).send();
+
   } catch (erro) {
     return res.status(500).json({ erro: "Erro ao remover produto" });
   }
 };
+
 
 module.exports = {
   listar,

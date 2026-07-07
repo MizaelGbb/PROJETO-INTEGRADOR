@@ -1,4 +1,63 @@
-const { Vendedor } = require("../../models");
+
+const bcrypt = require("bcrypt");
+const { Vendedor, Usuario, sequelize } = require("../../models");
+
+async function registrarFuncionario(req, res) {
+const transaction = await sequelize.transaction();
+
+try {
+const { nome, email, senha, telefone, tipo } = req.body;
+
+if (!nome || !email || !senha || !tipo) {
+  throw new Error("Dados obrigatórios faltando");
+}
+
+if (!["vendedor", "gerente"].includes(tipo)) {
+  throw new Error("Tipo inválido");
+}
+
+const usuarioExistente = await Usuario.findOne({
+  where: { email },
+  transaction,
+});
+
+if (usuarioExistente) {
+  throw new Error("Email já cadastrado");
+}
+
+const senhaHash = await bcrypt.hash(senha, 10);
+
+const novoUsuario = await Usuario.create({
+  nome,
+  email,
+  senha: senhaHash,
+  telefone,
+  tipo: "vendedor",
+}, { transaction });
+
+const novoVendedor = await Vendedor.create({
+  id_usuario: novoUsuario.id_usuario,
+  tipo,
+}, { transaction });
+
+await transaction.commit();
+
+return res.status(201).json({
+  message: "Funcionário cadastrado",
+  id: novoVendedor.id_usuario,
+});
+
+} catch (err) {
+await transaction.rollback();
+
+
+return res.status(400).json({
+  erro: err.message,
+});
+}
+}
+
+
 
 // listar
 async function listar(req, res) {
@@ -16,20 +75,6 @@ async function buscar(req, res) {
   if (!vendedor) return res.status(404).json({ erro: "Vendedor não encontrado" });
 
   res.status(200).json(vendedor);
-}
-
-// criar
-async function criar(req, res) {
-  try {
-    const novoVendedor = await Vendedor.create(req.body);
-
-    res
-      .status(201)
-      .set("Location", "/api/vendedores/" + novoVendedor.id_usuario)
-      .json(novoVendedor);
-  } catch (err) {
-    res.status(400).json({ erro: err.message });
-  }
 }
 
 // atualizar
@@ -61,9 +106,10 @@ async function remover(req, res) {
 }
 
 module.exports = {
-  listar,
-  buscar,
-  criar,
-  atualizar,
-  remover,
+listar,
+buscar,
+
+atualizar,
+remover,
+registrarFuncionario
 };

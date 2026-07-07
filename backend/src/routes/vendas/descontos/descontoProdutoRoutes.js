@@ -7,7 +7,6 @@ const autenticar = passport.authenticate("jwt", { session: false });
 
 router.get("/descontos-produto", autenticar, controller.listar);
 router.get("/descontos-produto/:id", autenticar, controller.buscar);
-router.post("/descontos-produto", autenticar, controller.criar);
 router.put("/descontos-produto/:id", autenticar, controller.atualizar);
 router.delete("/descontos-produto/:id", autenticar, controller.remover);
 
