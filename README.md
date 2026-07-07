@@ -136,7 +136,7 @@ Crie um arquivo `.env` contendo:
 
 ```env
 DB_HOST=localhost
-DB_PORT=5432
+DB_PORT=3000
 DB_NAME=integr
 DB_USER=postgres
 DB_PASSWORD=sua_senha
