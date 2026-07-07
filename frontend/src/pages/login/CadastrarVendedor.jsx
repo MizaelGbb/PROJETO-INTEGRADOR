@@ -1,122 +1,134 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, Lock, UserPlus, Save } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Lock, UserPlus } from "lucide-react";
 import "../../styles/login/CadastrarVendedor.css";
 
 export default function CadastrarVendedor() {
-  const navigate = useNavigate();
+const navigate = useNavigate();
 
-  const estadoInicial = {
-    nome: "",
-    email: "",
-    telefone: "",
-    senha: "",
-  };
+const estadoInicial = {
+nome: "",
+email: "",
+telefone: "",
+senha: "",
+tipo: "vendedor",
+};
 
-  const [form, setForm] = useState(estadoInicial);
-  const [toast, setToast] = useState(null);
+const [form, setForm] = useState(estadoInicial);
+const [toast, setToast] = useState(null);
+const [loading, setLoading] = useState(false);
 
-  function showToast(msg, type = "success") {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  }
+function showToast(msg, type = "success") {
+setToast({ msg, type });
+setTimeout(() => setToast(null), 3000);
+}
 
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
+function handleChange(e) {
+setForm({ ...form, [e.target.name]: e.target.value });
+}
 
 async function handleSubmit(e) {
-  e.preventDefault();
-
+e.preventDefault();
+if (loading) return;
     const token = localStorage.getItem("token");
 
-    try {
-      // 1️⃣ Cria usuário
-      const userRes = await fetch("http://localhost:3000/auth/registrar", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          nome: form.nome,
-          email: form.email,
-          senha: form.senha,
-          telefone: form.telefone,
-          tipo: "gerente",
-        }),
-      });
 
+setLoading(true);
 
-      if (!userRes.ok) {
-        throw new Error("Falha ao criar o usuário base.");
-      }
-      const user = await userRes.json();
+try {
+  const res = await fetch("http://localhost:3000/cadastra/vendedores", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      nome: form.nome.trim(),
+      email: form.email.trim(),
+      senha: form.senha,
+      telefone: form.telefone,
+      tipo: form.tipo, // vendedor ou gerente
+    }),
+  });
 
-      // 2️⃣ Cria vendedor
-      const vendRes = await fetch("http://localhost:3000/cadastra/vendedores", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          id_usuario: user.id_usuario,
-          tipo: "vendedor"
-        }),
-      });
+  const text = await res.text();
 
-      if (!vendRes.ok) throw new Error("Erro ao criar vendedor");
-
-      showToast("Vendedor cadastrado com sucesso!");
-      setForm(estadoInicial);
-      setTimeout(() => navigate("/login"), 1500);
-
-    } catch (err) {
-      console.error(err);
-      showToast("Erro ao cadastrar vendedor", "error");
-    }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    console.error("Resposta não é JSON:", text);
+    throw new Error("Erro no servidor");
   }
 
-  return (
-    <div className="container">
-      {toast && <div className={`toast ${toast.type}`}>{toast.msg}</div>}
+  if (!res.ok) {
+    throw new Error(data.erro || "Erro ao cadastrar");
+  }
 
-      <header className="header">
-        <h1 className="title">Cadastrar Vendedor</h1>
-        <button className="voltarBtn" onClick={() => navigate("/menu")}>
-          <ArrowLeft size={20} /> Voltar ao Menu
-        </button>
-      </header>
+  showToast("Cadastro realizado com sucesso!");
+  setForm(estadoInicial);
 
-      <main>
-        <div className="form-card">
-          <form onSubmit={handleSubmit} className="form-grid">
-            
-            <div className="form-group">
-              <label className="form-label"><User size={18} /> Nome Completo</label>
-              <input className="form-input" name="nome" value={form.nome} placeholder="Ex: João da Silva" onChange={handleChange} required />
-            </div>
+  setTimeout(() => navigate("/menu"), 1500);
 
-            <div className="form-group">
-              <label className="form-label"><Mail size={18} /> E-mail</label>
-              <input className="form-input" type="email" name="email" value={form.email} placeholder="joao@empresa.com" onChange={handleChange} required />
-            </div>
+} catch (err) {
+  console.error(err);
+  showToast(err.message, "error");
+} finally {
+  setLoading(false);
+}
 
-            <div className="form-group">
-              <label className="form-label"><Phone size={18} /> Telefone</label>
-              <input className="form-input" name="telefone" value={form.telefone} placeholder="(11) 99999-9999" onChange={handleChange} />
-            </div>
+}
 
-            <div className="form-group">
-              <label className="form-label"><Lock size={18} /> Senha</label>
-              <input className="form-input" type="password" name="senha" value={form.senha} placeholder="********" onChange={handleChange} required />
-            </div>
+return ( <div className="container">
+{toast && <div className={`toast ${toast.type}`}>{toast.msg}</div>}
 
-            <button type="submit" className="btn-submit">
-              <UserPlus size={20} /> Cadastrar Vendedor
-            </button>
-          </form>
+  <header className="header">
+    <h1 className="title">Cadastrar Funcionário</h1>
+    <button className="voltarBtn" onClick={() => navigate("/menu")}>
+      <ArrowLeft size={20} /> Voltar
+    </button>
+  </header>
+
+  <main>
+    <div className="form-card">
+      <form onSubmit={handleSubmit} className="form-grid">
+
+        <div className="form-group">
+          <label className="form-label"><User size={18}/> Nome</label>
+          <input className="form-input" name="nome" value={form.nome} onChange={handleChange} required />
         </div>
-      </main>
+
+        <div className="form-group">
+          <label className="form-label"><Mail size={18}/> Email</label>
+          <input className="form-input" type="email" name="email" value={form.email} onChange={handleChange} required />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label"><Phone size={18}/> Telefone</label>
+          <input className="form-input" name="telefone" value={form.telefone} onChange={handleChange} />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label"><Lock size={18}/> Senha</label>
+          <input className="form-input" type="password" name="senha" value={form.senha} onChange={handleChange} required />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Tipo de Usuário</label>
+          <select className="form-input" name="tipo" value={form.tipo} onChange={handleChange}>
+            <option value="vendedor">Vendedor</option>
+            <option value="gerente">Gerente</option>
+          </select>
+        </div>
+
+        <button type="submit" className="btn-submit" disabled={loading}>
+          <UserPlus size={20}/> {loading ? "Salvando..." : "Cadastrar"}
+        </button>
+
+      </form>
     </div>
-  );
+  </main>
+</div>
+
+);
 }

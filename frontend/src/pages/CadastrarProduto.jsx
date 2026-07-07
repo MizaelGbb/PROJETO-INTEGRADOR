@@ -83,14 +83,11 @@ export default function CadastrarProduto() {
         }
       );
 
-      if (!response.ok) {
-        const erro = await response.text();
-        console.log("Erro do backend:", erro);
-        throw new Error(erro);
-      }
-
       const data = await response.json();
-      console.log("Produto criado:", data);
+
+      if (!response.ok) {
+        throw new Error(data.erro || "Erro ao cadastrar produto");
+      }
 
       alert("✅ Produto cadastrado com sucesso!");
 
