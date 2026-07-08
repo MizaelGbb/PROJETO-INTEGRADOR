@@ -6,13 +6,13 @@ import {
   AlignLeft, 
   Save, 
   Tags 
-} from "lucide-react"; // Importando os ícones
-import "../styles/CadastrarCategoria.css"; // Importando o CSS
+} from "lucide-react"; 
+import "../styles/CadastrarCategoria.css"; 
 
 function CadastrarCategoria() {
   const navigate = useNavigate();
 
-  // URL do seu backend
+
   const API_URL = "http://localhost:3000/cadastra/categorias"; 
 
   const [form, setForm] = useState({
