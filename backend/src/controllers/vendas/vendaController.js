@@ -30,20 +30,14 @@ async function buscar(req, res) {
   res.status(200).json(venda);
 }
 
-// criar
-
-
-
-// 🔹 CRIAR VENDA
+// CRIAR VENDA
 async function criar(req, res) {
   const t = await sequelize.transaction();
 
   try {
-    // 1. ADICIONADO: extrair forma_de_pagamento enviada pelo front-end
     const { id_cliente, produtos, forma_de_pagamento } = req.body;
     const hoje = new Date();
 
-    // ✅ VALIDA CLIENTE
     const cliente = await Cliente.findByPk(id_cliente);
 
     if (!cliente) {
@@ -63,7 +57,6 @@ async function criar(req, res) {
       let precoOriginal = produto.valor_final;
       let precoFinal = precoOriginal;
 
-      // 🔹 DESCONTO POR PRODUTO
       const descProduto = await DescontoProduto.findOne({
         where: { id_produto: produto.id_produto },
         include: [{
@@ -79,7 +72,6 @@ async function criar(req, res) {
       if (descProduto) {
         precoFinal = descProduto.novo_valor;
       } else {
-        // 🔹 DESCONTO POR CATEGORIA
         const descCategoria = await DescontoCategoria.findOne({
           where: { id_categoria: produto.id_categoria },
           include: [{
@@ -109,14 +101,12 @@ async function criar(req, res) {
       });
     }
 
-    // 🔹 CRIA VENDA (CORRIGIDO AQUI)
     const venda = await Venda.create({
-      id_usuario: id_cliente, // 2. Mapeia o id_cliente recebido para o id_usuario que o banco exige
-      forma_de_pagamento: forma_de_pagamento || "Dinheiro", // 3. Passa a forma de pagamento
+      id_usuario: id_cliente, 
+      forma_de_pagamento: forma_de_pagamento || "Dinheiro", 
       valor_total: total
     }, { transaction: t });
 
-    // 🔹 SALVA ITENS
     for (const item of itensVenda) {
       await VendaProduto.create({
         id_venda: venda.id_venda,
