@@ -7,7 +7,6 @@ const autenticar = passport.authenticate("jwt", { session: false });
 
 router.get("/compra-produto", autenticar, controller.listar);
 
-// chave composta 👇
 router.get("/compra-produto/:id_compra/:id_produto", autenticar, controller.buscar);
 router.post("/compra-produto", autenticar, controller.criar);
 router.put("/compra-produto/:id_compra/:id_produto", autenticar, controller.atualizar);
