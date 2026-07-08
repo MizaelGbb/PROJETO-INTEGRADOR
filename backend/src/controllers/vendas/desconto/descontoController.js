@@ -1,6 +1,5 @@
 const { Desconto, DescontoCategoria, DescontoProduto, sequelize } = require("../../../models");
 
-// LISTAR (já trazendo especializações)
 async function listar(req, res) {
   try {
     const descontos = await Desconto.findAll({
@@ -17,7 +16,6 @@ async function listar(req, res) {
   }
 }
 
-// CRIAR (COM REGRA DE NEGÓCIO + TRANSAÇÃO)
 async function criar(req, res) {
   const t = await sequelize.transaction();
 
@@ -38,14 +36,12 @@ async function criar(req, res) {
       throw new Error("Datas obrigatórias");
     }
 
-    // 1️⃣ cria desconto
     const desconto = await Desconto.create({
       data_inicio,
       data_fim,
       publico
     }, { transaction: t });
 
-    // 2️⃣ especialização
     if (tipo_desconto === "categoria") {
 
       if (!id_categoria || !porcentagem_desconto) {
