@@ -158,7 +158,7 @@ function Estoque() {
                   <td>{p.nome}</td>
                   <td>{p.quantidade_atual}</td>
 
-                  {/* 🔥 PREÇO CORRIGIDO */}
+                  {/* PREÇO */}
                   <td>
                     {p.preco_final !== p.preco_original && (
                       <div style={{
