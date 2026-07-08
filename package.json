@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "seed": "sequelize-cli db:seed:all",
+    "seed:undo": "sequelize-cli db:seed:undo:all"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -24,3 +26,4 @@
     "sequelize-cli": "^6.6.5"
   }
 }
+
