@@ -37,7 +37,6 @@ function CadastrarDesconto() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // 🔥 CARREGAR DESCONTOS
   const carregarDescontos = async () => {
     const token = localStorage.getItem("token");
 
@@ -78,7 +77,6 @@ function CadastrarDesconto() {
     });
   }
 
-  // 🔥 ENVIO SIMPLIFICADO (BACKEND FAZ TUDO)
   async function handleSubmit(e) {
     e.preventDefault();
     const token = localStorage.getItem("token");
