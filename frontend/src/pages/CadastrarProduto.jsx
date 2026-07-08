@@ -9,10 +9,7 @@ export default function CadastrarProduto() {
   const [form, setForm] = useState({
     nome: "",
     categoria: "",
-    custo: "0.00",
     venda: "0.00",
-    qtdInicial: "0",
-    qtdEstoque: "0",
     qtdMinima: "5",
   });
 
@@ -75,10 +72,8 @@ export default function CadastrarProduto() {
           body: JSON.stringify({
             nome: form.nome,
             id_categoria: parseInt(form.categoria),
-            custo: parseFloat(form.custo),
             valor_final: parseFloat(form.venda),
             estoque_minimo: parseInt(form.qtdMinima),
-            quantidade_atual: parseInt(form.qtdEstoque),
           }),
         }
       );
@@ -149,18 +144,6 @@ export default function CadastrarProduto() {
           </div>
 
           <div className="prod-group">
-            <label className="prod-label">Custo (R$)</label>
-            <input
-              className="prod-input"
-              name="custo"
-              type="number"
-              step="0.01"
-              value={form.custo}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="prod-group">
             <label className="prod-label">Valor de Venda (R$) *</label>
             <input
               className="prod-input"
@@ -168,29 +151,6 @@ export default function CadastrarProduto() {
               type="number"
               step="0.01"
               value={form.venda}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="prod-group">
-            <label className="prod-label">Quantidade Inicial</label>
-            <input
-              className="prod-input"
-              name="qtdInicial"
-              type="number"
-              value={form.qtdInicial}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="prod-group">
-            <label className="prod-label">Quantidade em Estoque *</label>
-            <input
-              className="prod-input"
-              name="qtdEstoque"
-              type="number"
-              value={form.qtdEstoque}
               onChange={handleChange}
               required
             />

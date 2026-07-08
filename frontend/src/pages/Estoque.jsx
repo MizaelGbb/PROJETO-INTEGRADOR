@@ -9,6 +9,8 @@ function Estoque() {
 
   const [busca, setBusca] = useState("");
   const [estoque, setEstoque] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
   const [erro, setErro] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,15 +46,52 @@ function Estoque() {
     }
   };
 
+  const carregarCategorias = async () => {
+  const token = localStorage.getItem("token");
+
+  try {
+    const response = await fetch(
+      "http://localhost:3000/cadastra/categorias",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Erro ao carregar categorias");
+    }
+
+    const data = await response.json();
+
+    setCategorias(data);
+
+  } catch (error) {
+    console.error(error);
+  }
+  };
+
   useEffect(() => {
-    carregarEstoque();
+  carregarEstoque();
+  carregarCategorias();
   }, []);
 
   const filtrado = useMemo(() => {
-    return estoque.filter((p) =>
-      p.nome?.toLowerCase().includes(busca.toLowerCase())
-    );
-  }, [estoque, busca]);
+  return estoque.filter((p) => {
+
+    const nomeOk = p.nome
+      ?.toLowerCase()
+      .includes(busca.toLowerCase());
+
+    const categoriaOk =
+      categoriaSelecionada === "" ||
+      p.id_categoria === Number(categoriaSelecionada);
+
+    return nomeOk && categoriaOk;
+
+  });
+  }, [estoque, busca, categoriaSelecionada]);
 
   return (
     <div className="container">
@@ -65,6 +104,7 @@ function Estoque() {
       </header>
 
       <div className="toolbar">
+
         <input
           type="text"
           placeholder="Buscar produto..."
@@ -72,6 +112,27 @@ function Estoque() {
           onChange={(e) => setBusca(e.target.value)}
           className="searchInput"
         />
+
+        <select
+          className="searchInput"
+          value={categoriaSelecionada}
+          onChange={(e) => setCategoriaSelecionada(e.target.value)}
+        >
+          <option value="">
+            Todas as categorias
+          </option>
+
+          {categorias.map((categoria) => (
+            <option
+              key={categoria.id_categoria}
+              value={categoria.id_categoria}
+            >
+              {categoria.nome}
+            </option>
+          ))}
+
+        </select>
+
       </div>
 
       {erro && <p className="text-danger">{erro}</p>}
@@ -84,7 +145,6 @@ function Estoque() {
               <th>ID</th>
               <th>Nome</th>
               <th>Quantidade</th>
-              <th>Custo</th>
               <th>Preço</th>
               <th>Categoria</th>
             </tr>
@@ -97,8 +157,6 @@ function Estoque() {
                   <td>{p.id_produto}</td>
                   <td>{p.nome}</td>
                   <td>{p.quantidade_atual}</td>
-
-                  <td>R$ {Number(p.custo).toFixed(2)}</td>
 
                   {/* 🔥 PREÇO CORRIGIDO */}
                   <td>
@@ -122,7 +180,7 @@ function Estoque() {
               ))
             ) : (
               <tr>
-                <td colSpan="6" style={{ textAlign: "center", padding: "32px" }}>
+                <td colSpan="5" style={{ textAlign: "center", padding: "32px" }}>
                   Nenhum produto encontrado.
                 </td>
               </tr>

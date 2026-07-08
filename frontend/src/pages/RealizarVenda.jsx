@@ -11,20 +11,19 @@ export default function RealizarVenda() {
   const [cpf, setCpf] = useState("");
   const [cliente, setCliente] = useState(null);
 
-  const API_PRODUTOS = "http://localhost:3000/cadastra/produtos";
-  const API_CLIENTES = "http://localhost:3000/cadastra/clientes";
+  const API = "http://localhost:3000/cadastra";
 
-  // 🔍 BUSCAR CLIENTE PELO CPF
+  const getAuth = () => ({
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  });
+
+  // 🔍 BUSCAR CLIENTE
   const buscarCliente = async () => {
     if (!cpf.trim()) return;
 
-    const token = localStorage.getItem("token");
-
     try {
-      const response = await fetch(API_CLIENTES, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await fetch(`${API}/clientes/cpf/${cpf}`, {
+        headers: getAuth(),
       });
 
       if (response.status === 401) {
@@ -33,30 +32,17 @@ export default function RealizarVenda() {
         return;
       }
 
+      if (!response.ok) throw new Error("Cliente não encontrado");
+
       const data = await response.json();
+      setCliente(data);
 
-      const clientes = Array.isArray(data)
-        ? data
-        : data.clientes || data.data || [];
+      console.log("CLIENTE:", data); // 🔥 debug
 
-      const encontrado = clientes.find(
-        (c) => c.cpf.replace(/\D/g, "") === cpf.replace(/\D/g, "")
-      );
-
-      if (!encontrado) {
-        alert("Cliente não encontrado");
-        setCliente(null);
-        return;
-      }
-
-      // 🔍 LOG ESTRATÉGICO: Abra o F12 no navegador para conferir este objeto!
-      console.log("DADOS DO CLIENTE ENCONTRADO:", encontrado);
-
-      setCliente(encontrado);
-      alert(`Cliente encontrado com sucesso!`);
+      alert("Cliente encontrado!");
     } catch (err) {
-      console.error(err);
-      alert("Erro ao buscar cliente");
+      alert(err.message);
+      setCliente(null);
     }
   };
 
@@ -79,13 +65,9 @@ export default function RealizarVenda() {
       }
     }
 
-    const token = localStorage.getItem("token");
-
     try {
-      const response = await fetch(API_PRODUTOS, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await fetch(`${API}/produtos/${productCode}`, {
+        headers: getAuth(),
       });
 
       if (response.status === 401) {
@@ -94,17 +76,9 @@ export default function RealizarVenda() {
         return;
       }
 
-      if (!response.ok) throw new Error("Erro ao buscar produtos");
+      if (!response.ok) throw new Error("Produto não encontrado");
 
-      const produtos = await response.json();
-
-      const product = produtos.find(
-        (p) =>
-          p.id_produto.toString() === productCode ||
-          p.nome.toLowerCase().includes(productCode.toLowerCase())
-      );
-
-      if (!product) throw new Error("Produto não encontrado");
+      const product = await response.json();
 
       setItems((prev) => [
         ...prev,
@@ -113,13 +87,12 @@ export default function RealizarVenda() {
           id_produto: product.id_produto,
           name: product.nome,
           quantity,
-          unitPrice: Number(product.valor_final),
+          unitPrice: Number(product.preco_final || product.valor_final),
         },
       ]);
 
       setInputValue("");
     } catch (error) {
-      console.error(error);
       alert(`Produto não encontrado: ${productCode}`);
       setInputValue("");
     }
@@ -135,55 +108,52 @@ export default function RealizarVenda() {
 
   // 💰 FINALIZAR VENDA
   async function finalizarVenda() {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    if (!cliente) {
-      alert("Busque um cliente pelo CPF antes de finalizar");
-      return;
-    }
-
-    const valorTotalVenda = items.reduce(
-      (acc, item) => acc + item.quantity * item.unitPrice,
-      0
-    );
-
-    const produtosFormatados = items.map((item) => ({
-      id_produto: item.id_produto,
-      quantidade: item.quantity,
-    }));
-
-    try {
-      const response = await fetch("http://localhost:3000/cadastra/vendas", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          // 🛡️ MALHA DE SEGURANÇA: Garante o envio do ID correto independentemente do mapeamento
-          id_usuario: cliente.id_usuario || cliente.id_cliente || cliente.id, 
-          forma_de_pagamento: "Dinheiro",
-          valor_total: valorTotalVenda,
-          produtos: produtosFormatados,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.erro || "Erro ao finalizar venda");
-      }
-
-      alert("Venda realizada com sucesso!");
-
-      setItems([]);
-      setInputValue("");
-      setCliente(null);
-      setCpf("");
-    } catch (err) {
-      console.error(err);
-      alert(`Erro ao finalizar venda: ${err.message}`);
-    }
+  if (!cliente || !cliente.id_usuario) {
+    alert("Busque um cliente válido antes de finalizar");
+    return;
   }
+
+  if (items.length === 0) {
+    alert("Adicione produtos");
+    return;
+  }
+
+  const produtosFormatados = items.map((item) => ({
+    id_produto: item.id_produto,
+    quantidade: item.quantity,
+  }));
+
+  try {
+    const response = await fetch(`${API}/vendas`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        id_cliente: cliente.id_usuario, // Envia o ID 1 sob o nome 'id_cliente' que a rota de vendas espera
+        produtos: produtosFormatados,
+        forma_de_pagamento: "Dinheiro",
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.erro || errorData.message || "Erro ao finalizar venda");
+    }
+
+    alert("Venda realizada com sucesso!");
+
+    setItems([]);
+    setInputValue("");
+    setCliente(null);
+    setCpf("");
+  } catch (err) {
+    alert(`Erro ao finalizar venda: ${err.message}`);
+  }
+}
 
   const total = items.reduce(
     (acc, item) => acc + item.quantity * item.unitPrice,
@@ -192,7 +162,6 @@ export default function RealizarVenda() {
 
   return (
     <div className="venda-page-wrapper">
-      {/* HEADER */}
       <div className="venda-header">
         <button onClick={() => navigate("/menu")} className="venda-back-btn">
           <ArrowLeft size={18} />
@@ -203,7 +172,7 @@ export default function RealizarVenda() {
       </div>
 
       <div className="venda-main-card">
-        {/* COLUNA ESQUERDA (Lista e Busca) */}
+        {/* ESQUERDA */}
         <div className="venda-col-left">
           {/* CPF */}
           <div className="venda-search-container">
@@ -221,11 +190,13 @@ export default function RealizarVenda() {
 
           {cliente && (
             <p style={{ marginBottom: "15px", fontWeight: "bold", color: "#1e66ff" }}>
-              ✓ Cliente Selecionado — ID: {cliente.id_usuario || cliente.id_cliente || cliente.id} | Nome: {cliente.nome || "N/A"} | CPF: {cliente.cpf}
+              ✓ Cliente Selecionado — ID: {cliente.id_usuario}
+              {cliente.nome && ` | Nome: ${cliente.nome}`}
+              {" | CPF: "}{cliente.cpf}
             </p>
           )}
 
-          {/* INPUT DE BUSCA PRODUTO */}
+          {/* PRODUTO */}
           <div className="venda-search-container">
             <div className="venda-input-wrapper">
               <Search size={20} className="venda-search-icon" />
@@ -245,7 +216,7 @@ export default function RealizarVenda() {
             </button>
           </div>
 
-          {/* TABELA DOS ITENS */}
+          {/* TABELA */}
           <div className="venda-table-container">
             <table className="venda-table">
               <thead>
@@ -273,9 +244,9 @@ export default function RealizarVenda() {
                     <tr key={item.id}>
                       <td className="text-center font-bold">{item.quantity}</td>
                       <td>{item.name}</td>
-                      <td>R$ {item.unitPrice.toFixed(2).replace(".", ",")}</td>
+                      <td>R$ {item.unitPrice.toFixed(2)}</td>
                       <td className="font-bold">
-                        R$ {(item.quantity * item.unitPrice).toFixed(2).replace(".", ",")}
+                        R$ {(item.quantity * item.unitPrice).toFixed(2)}
                       </td>
                       <td>
                         <button onClick={() => removeItem(item.id)} className="venda-delete-btn">
@@ -290,24 +261,24 @@ export default function RealizarVenda() {
           </div>
         </div>
 
-        {/* COLUNA DIREITA (Logo e Totalizadores) */}
+        {/* DIREITA */}
         <div className="venda-col-right">
-          {/* BOX DO LOGO */}
           <div className="venda-logo-box">
             <div className="venda-avatar-wrapper">
               <img
                 src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150"
-                alt="Logo TechStore"
+                alt="Logo"
                 className="venda-avatar-img"
               />
             </div>
             <h2 className="venda-store-name">TechStore Ltda.</h2>
           </div>
 
-          {/* BOX DO TOTAL */}
           <div className="venda-total-box">
             <p className="venda-total-label">VALOR TOTAL DA COMPRA</p>
-            <h2 className="venda-total-value">R$ {total.toFixed(2).replace(".", ",")}</h2>
+            <h2 className="venda-total-value">
+              R$ {total.toFixed(2)}
+            </h2>
 
             <button
               disabled={items.length === 0 || !cliente}
