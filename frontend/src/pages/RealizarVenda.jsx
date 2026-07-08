@@ -17,7 +17,6 @@ export default function RealizarVenda() {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   });
 
-  // 🔍 BUSCAR CLIENTE
   const buscarCliente = async () => {
     if (!cpf.trim()) return;
 
@@ -37,7 +36,7 @@ export default function RealizarVenda() {
       const data = await response.json();
       setCliente(data);
 
-      console.log("CLIENTE:", data); // 🔥 debug
+      console.log("CLIENTE:", data); 
 
       alert("Cliente encontrado!");
     } catch (err) {
@@ -46,7 +45,6 @@ export default function RealizarVenda() {
     }
   };
 
-  // ➕ ADICIONAR PRODUTO
   const handleAddItem = async () => {
     if (!inputValue.trim()) return;
 
@@ -106,7 +104,6 @@ export default function RealizarVenda() {
     setItems(items.filter((item) => item.id !== id));
   };
 
-  // 💰 FINALIZAR VENDA
   async function finalizarVenda() {
   const token = localStorage.getItem("token");
 
@@ -133,7 +130,7 @@ export default function RealizarVenda() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        id_cliente: cliente.id_usuario, // Envia o ID 1 sob o nome 'id_cliente' que a rota de vendas espera
+        id_cliente: cliente.id_usuario, 
         produtos: produtosFormatados,
         forma_de_pagamento: "Dinheiro",
       }),
