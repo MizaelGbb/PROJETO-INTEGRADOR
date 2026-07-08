@@ -10,7 +10,7 @@ const {
 
 const { Op } = require("sequelize");
 
-// 🔥 LISTAR COM DESCONTO
+//LISTAR COM DESCONTO
 async function listar(req, res) {
   try {
     const hoje = new Date();
@@ -29,7 +29,6 @@ async function listar(req, res) {
       let precoFinal = produto.valor_final;
       let descontoAplicado = null;
 
-      // 🔹 DESCONTO POR PRODUTO
       const descProduto = await DescontoProduto.findOne({
         where: { id_produto: produto.id_produto },
         include: [{
@@ -47,7 +46,6 @@ async function listar(req, res) {
         descontoAplicado = "produto";
 
       } else {
-        // 🔹 DESCONTO POR CATEGORIA
         const descCategoria = await DescontoCategoria.findOne({
           where: { id_categoria: produto.id_categoria },
           include: [{
@@ -84,8 +82,6 @@ async function listar(req, res) {
 }
 
 
-// 🔹 BUSCAR POR ID
-
 const buscar = async (req, res) => {
   try {
     const { id } = req.params;
@@ -105,7 +101,6 @@ const buscar = async (req, res) => {
     let precoFinal = produto.valor_final;
     let descontoAplicado = null;
 
-    // 🔹 DESCONTO POR PRODUTO
     const descProduto = await DescontoProduto.findOne({
       where: { id_produto: produto.id_produto },
       include: [{
@@ -123,7 +118,6 @@ const buscar = async (req, res) => {
       descontoAplicado = "produto";
 
     } else {
-      // 🔹 DESCONTO POR CATEGORIA
       const descCategoria = await DescontoCategoria.findOne({
         where: { id_categoria: produto.id_categoria },
         include: [{
@@ -158,7 +152,7 @@ const buscar = async (req, res) => {
 };
 
 
-// 🔹 CRIAR
+// CRIAR
 const criar = async (req, res) => {
   try {
     const {
@@ -187,7 +181,7 @@ const criar = async (req, res) => {
 };
 
 
-// 🔹 ATUALIZAR
+// ATUALIZAR
 const atualizar = async (req, res) => {
   try {
     const { id } = req.params;
@@ -222,7 +216,7 @@ const atualizar = async (req, res) => {
 };
 
 
-// 🔹 REMOVER
+// REMOVER
 const remover = async (req, res) => {
   try {
     const { id } = req.params;
