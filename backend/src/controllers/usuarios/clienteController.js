@@ -1,7 +1,6 @@
 const bcrypt = require("bcrypt");
 const { Cliente, Venda, Produto, Usuario, sequelize } = require("../../models");
 
-// NOVO ENDPOINT SEGURO
 async function registrarCliente(req, res) {
 const transaction = await sequelize.transaction();
 
@@ -87,7 +86,7 @@ async function buscarPorCPF(req, res) {
       include: [
         {
           model: Usuario,
-          as: "usuario", // 👈 TEM QUE SER O MESMO alias do associate
+          as: "usuario",
           attributes: ["nome"],
         },
       ],
@@ -97,11 +96,10 @@ async function buscarPorCPF(req, res) {
       return res.status(404).json({ erro: "Cliente não encontrado" });
     }
 
-    // 🔥 AQUI É O PULO DO GATO
     const resposta = {
       id_usuario: cliente.id_usuario,
       cpf: cliente.cpf,
-      nome: cliente.usuario?.nome, // 👈 vem da outra tabela
+      nome: cliente.usuario?.nome,
     };
 
     res.json(resposta);
