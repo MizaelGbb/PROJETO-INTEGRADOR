@@ -2,10 +2,8 @@ const bcrypt = require("bcrypt");
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Gerar hash da senha
     const senhaHash = await bcrypt.hash("123456", 10);
 
-    // 2. Inserir usuário
     const [usuario] = await queryInterface.bulkInsert(
       "usuarios",
       [
@@ -15,25 +13,26 @@ module.exports = {
           senha: senhaHash,
           telefone: "49999999999",
           tipo: "vendedor",
+          created_at: new Date(),
+          updated_at: new Date(),
         },
       ],
-      { returning: true } // importante pra pegar o ID
+      { returning: true }
     );
 
-    // 3. Inserir na tabela vendedores como gerente
     await queryInterface.bulkInsert("vendedor", [
       {
-        id_usuario: usuario.id_usuario, // ou usuario.id (depende do seu model)
+        id_usuario: usuario.id_usuario,
         tipo: "gerente",
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     ]);
   },
 
   async down(queryInterface, Sequelize) {
-    // remove primeiro o vendedor
     await queryInterface.bulkDelete("vendedor", null, {});
 
-    // depois o usuário
     await queryInterface.bulkDelete("usuarios", {
       email: "gerente@admin.com",
     });
