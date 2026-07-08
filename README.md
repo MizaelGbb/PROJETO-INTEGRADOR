@@ -184,61 +184,6 @@ Execute o projeto:
 yarn dev
 ```
 
----
-
-# Rotas Principais
-
-## Autenticação
-
-```
-POST /auth/login
-```
-
-## Clientes
-
-```
-GET    /cadastra/clientes
-POST   /cadastra/clientes
-PUT    /cadastra/clientes/:id
-DELETE /cadastra/clientes/:id
-```
-
-## Vendedores
-
-```
-GET    /cadastra/vendedores
-POST   /cadastra/vendedores
-PUT    /cadastra/vendedores/:id
-DELETE /cadastra/vendedores/:id
-```
-
-## Categorias
-
-```
-GET    /cadastra/categorias
-POST   /cadastra/categorias
-PUT    /cadastra/categorias/:id
-DELETE /cadastra/categorias/:id
-```
-
-## Produtos
-
-```
-GET    /cadastra/produtos
-POST   /cadastra/produtos
-PUT    /cadastra/produtos/:id
-DELETE /cadastra/produtos/:id
-```
-
-## Vendas
-
-```
-GET    /cadastra/vendas
-POST   /cadastra/vendas
-PUT    /cadastra/vendas/:id
-DELETE /cadastra/vendas/:id
-```
-
 # Autores
 
 Projeto desenvolvido para fins acadêmicos na disciplina de Integração de Sistemas.
