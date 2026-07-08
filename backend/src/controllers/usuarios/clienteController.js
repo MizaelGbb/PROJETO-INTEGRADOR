@@ -99,7 +99,7 @@ async function buscarPorCPF(req, res) {
 
     // 🔥 AQUI É O PULO DO GATO
     const resposta = {
-      id_cliente: cliente.id_usuario,
+      id_usuario: cliente.id_usuario,
       cpf: cliente.cpf,
       nome: cliente.usuario?.nome, // 👈 vem da outra tabela
     };
