@@ -85,25 +85,74 @@ async function listar(req, res) {
 
 
 // 🔹 BUSCAR POR ID
+
 const buscar = async (req, res) => {
   try {
     const { id } = req.params;
+    const hoje = new Date();
 
     const produto = await Produto.findByPk(id, {
       include: [
-        { model: Categoria, as: "categoria" },
-        { model: DescontoProduto, as: "descontos" },
-        { model: Compra, as: "compras" },
-        { model: Venda, as: "vendas" },
-      ],
+        { model: Categoria, as: "categoria" }
+      ]
     });
 
     if (!produto) {
       return res.status(404).json({ erro: "Produto não encontrado" });
     }
 
-    return res.json(produto);
+    let precoOriginal = produto.valor_final;
+    let precoFinal = produto.valor_final;
+    let descontoAplicado = null;
+
+    // 🔹 DESCONTO POR PRODUTO
+    const descProduto = await DescontoProduto.findOne({
+      where: { id_produto: produto.id_produto },
+      include: [{
+        model: Desconto,
+        as: "dadosDesconto",
+        where: {
+          data_inicio: { [Op.lte]: hoje },
+          data_fim: { [Op.gte]: hoje }
+        }
+      }]
+    });
+
+    if (descProduto) {
+      precoFinal = descProduto.novo_valor;
+      descontoAplicado = "produto";
+
+    } else {
+      // 🔹 DESCONTO POR CATEGORIA
+      const descCategoria = await DescontoCategoria.findOne({
+        where: { id_categoria: produto.id_categoria },
+        include: [{
+          model: Desconto,
+          as: "dadosDesconto",
+          where: {
+            data_inicio: { [Op.lte]: hoje },
+            data_fim: { [Op.gte]: hoje }
+          }
+        }]
+      });
+
+      if (descCategoria) {
+        precoFinal = precoOriginal - (
+          precoOriginal * (descCategoria.porcentagem_desconto / 100)
+        );
+        descontoAplicado = "categoria";
+      }
+    }
+
+    return res.json({
+      ...produto.toJSON(),
+      preco_original: precoOriginal,
+      preco_final: precoFinal,
+      desconto_aplicado: descontoAplicado
+    });
+
   } catch (erro) {
+    console.error(erro);
     return res.status(500).json({ erro: "Erro ao buscar produto" });
   }
 };
@@ -115,24 +164,20 @@ const criar = async (req, res) => {
     const {
       nome,
       id_categoria,
-      custo,
       valor_final,
       estoque_minimo,
-      quantidade_atual,
     } = req.body;
 
     const novoProduto = await Produto.create({
       nome,
       id_categoria,
-      custo,
+      custo: 0,
       valor_final,
       estoque_minimo,
-      quantidade_atual,
+      quantidade_atual: 0,
     });
 
-    return res
-      .status(201)
-      .json(novoProduto);
+    return res.status(201).json(novoProduto);
 
   } catch (erro) {
     return res.status(500).json({
@@ -156,19 +201,15 @@ const atualizar = async (req, res) => {
     const {
       nome,
       id_categoria,
-      custo,
       valor_final,
       estoque_minimo,
-      quantidade_atual,
     } = req.body;
 
     await produto.update({
       nome,
       id_categoria,
-      custo,
       valor_final,
       estoque_minimo,
-      quantidade_atual,
     });
 
     return res.json(produto);

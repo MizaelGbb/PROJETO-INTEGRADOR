@@ -78,6 +78,38 @@ return res.status(400).json({
 }
 
 
+async function buscarPorCPF(req, res) {
+  try {
+    const { cpf } = req.params;
+
+    const cliente = await Cliente.findOne({
+      where: { cpf },
+      include: [
+        {
+          model: Usuario,
+          as: "usuario", // 👈 TEM QUE SER O MESMO alias do associate
+          attributes: ["nome"],
+        },
+      ],
+    });
+
+    if (!cliente) {
+      return res.status(404).json({ erro: "Cliente não encontrado" });
+    }
+
+    // 🔥 AQUI É O PULO DO GATO
+    const resposta = {
+      id_cliente: cliente.id_usuario,
+      cpf: cliente.cpf,
+      nome: cliente.usuario?.nome, // 👈 vem da outra tabela
+    };
+
+    res.json(resposta);
+  } catch (err) {
+    res.status(500).json({ erro: "Erro ao buscar cliente" });
+  }
+}
+
 async function listar(req, res) {
 const clientes = await Cliente.findAll();
 res.status(200).json({ total: clientes.length, clientes });
@@ -151,5 +183,6 @@ buscar,
 atualizar,
 remover,
 historico,
-registrarCliente
+registrarCliente,
+buscarPorCPF
 };

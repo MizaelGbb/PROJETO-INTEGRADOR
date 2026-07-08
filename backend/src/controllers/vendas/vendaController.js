@@ -1,5 +1,16 @@
 
-const { Venda, VendaProduto, Produto, sequelize } = require("../../models");
+const { 
+  Venda, 
+  VendaProduto, 
+  Produto, 
+  Cliente,
+  DescontoProduto,
+  Desconto,
+  DescontoCategoria,
+  sequelize 
+} = require("../../models");
+
+const { Op } = require("sequelize");
 
 // listar
 async function listar(req, res) {
@@ -20,82 +31,114 @@ async function buscar(req, res) {
 }
 
 // criar
+
+
+
+// 🔹 CRIAR VENDA
 async function criar(req, res) {
-  const transaction = await sequelize.transaction();
+  const t = await sequelize.transaction();
 
   try {
-    const {
-      id_usuario,
-      forma_de_pagamento,
-      valor_total,
-      produtos,
-    } = req.body;
+    // 1. ADICIONADO: extrair forma_de_pagamento enviada pelo front-end
+    const { id_cliente, produtos, forma_de_pagamento } = req.body;
+    const hoje = new Date();
 
-    if (!produtos || produtos.length === 0) {
-      throw new Error("Venda sem produtos");
+    // ✅ VALIDA CLIENTE
+    const cliente = await Cliente.findByPk(id_cliente);
+
+    if (!cliente) {
+      throw new Error("Cliente não encontrado");
     }
 
-    // 1️⃣ cria a venda
-    const novaVenda = await Venda.create(
-      {
-        id_usuario,
-        forma_de_pagamento,
-        valor_total,
-      },
-      { transaction }
-    );
+    let total = 0;
+    const itensVenda = [];
 
-    // 2️⃣ processa produtos
     for (const item of produtos) {
-
-      // 🔥 CORREÇÃO AQUI
-      const quantidade = item.quantidade;
-
-      // busca produto
-      const produto = await Produto.findByPk(item.id_produto, {
-        transaction,
-      });
+      const produto = await Produto.findByPk(item.id_produto);
 
       if (!produto) {
-        throw new Error("Produto não encontrado.");
+        throw new Error(`Produto ${item.id_produto} não encontrado`);
       }
 
-      // valida estoque
-      if (produto.quantidade_atual < quantidade) {
-        throw new Error(`Estoque insuficiente para ${produto.nome}`);
+      let precoOriginal = produto.valor_final;
+      let precoFinal = precoOriginal;
+
+      // 🔹 DESCONTO POR PRODUTO
+      const descProduto = await DescontoProduto.findOne({
+        where: { id_produto: produto.id_produto },
+        include: [{
+          model: Desconto,
+          as: "dadosDesconto",
+          where: {
+            data_inicio: { [Op.lte]: hoje },
+            data_fim: { [Op.gte]: hoje }
+          }
+        }]
+      });
+
+      if (descProduto) {
+        precoFinal = descProduto.novo_valor;
+      } else {
+        // 🔹 DESCONTO POR CATEGORIA
+        const descCategoria = await DescontoCategoria.findOne({
+          where: { id_categoria: produto.id_categoria },
+          include: [{
+            model: Desconto,
+            as: "dadosDesconto",
+            where: {
+              data_inicio: { [Op.lte]: hoje },
+              data_fim: { [Op.gte]: hoje }
+            }
+          }]
+        });
+
+        if (descCategoria) {
+          precoFinal = precoOriginal - (
+            precoOriginal * (descCategoria.porcentagem_desconto / 100)
+          );
+        }
       }
 
-      // 3️⃣ salva na tabela venda_produto
-      await VendaProduto.create(
-        {
-          id_venda: novaVenda.id_venda,
-          id_produto: item.id_produto,
-          quantidade: quantidade,
-        },
-        { transaction }
-      );
+      const subtotal = precoFinal * item.quantidade;
+      total += subtotal;
 
-      // 4️⃣ baixa estoque
-      await produto.update(
-        {
-          quantidade_atual: produto.quantidade_atual - quantidade,
-        },
-        { transaction }
-      );
+      itensVenda.push({
+        id_produto: produto.id_produto,
+        quantidade: item.quantidade,
+        preco_unitario: precoFinal
+      });
     }
 
-    await transaction.commit();
+    // 🔹 CRIA VENDA (CORRIGIDO AQUI)
+    const venda = await Venda.create({
+      id_usuario: id_cliente, // 2. Mapeia o id_cliente recebido para o id_usuario que o banco exige
+      forma_de_pagamento: forma_de_pagamento || "Dinheiro", // 3. Passa a forma de pagamento
+      valor_total: total
+    }, { transaction: t });
 
-    return res.status(201).json(novaVenda);
+    // 🔹 SALVA ITENS
+    for (const item of itensVenda) {
+      await VendaProduto.create({
+        id_venda: venda.id_venda,
+        ...item
+      }, { transaction: t });
+    }
 
-  } catch (err) {
-    await transaction.rollback();
+    await t.commit();
 
-    return res.status(400).json({
-      erro: err.message,
+    return res.json({
+      mensagem: "Venda realizada com sucesso",
+      venda,
+      total
     });
+
+  } catch (erro) {
+    await t.rollback();
+    console.error(erro);
+    return res.status(500).json({ erro: erro.message });
   }
 }
+
 
 // atualizar
 async function atualizar(req, res) {

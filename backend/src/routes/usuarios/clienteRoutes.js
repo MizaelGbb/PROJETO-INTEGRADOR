@@ -13,5 +13,6 @@ router.get("/clientes/:id/historico", autenticar, controller.historico);
 router.put("/clientes/:id", autenticar, controller.atualizar);
 router.delete("/clientes/:id", autenticar, controller.remover);
 router.post("/clientes/", controller.registrarCliente);
+router.get("/clientes/cpf/:cpf", controller.buscarPorCPF);
 
 module.exports = router;

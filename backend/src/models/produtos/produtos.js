@@ -54,6 +54,7 @@ module.exports = (sequelize, DataTypes) => {
       custo: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
+        defaultValue: 0,
         validate: {
           isDecimal: { msg: "O valor de custo deve ser um número válido" },
           min: { args: [0], msg: "O custo não pode ser menor que zero" },
