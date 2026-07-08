@@ -6,55 +6,54 @@ async function registrarFuncionario(req, res) {
 const transaction = await sequelize.transaction();
 
 try {
-const { nome, email, senha, telefone, tipo } = req.body;
+  const { nome, email, senha, telefone, tipo } = req.body;
 
-if (!nome || !email || !senha || !tipo) {
-  throw new Error("Dados obrigatórios faltando");
-}
-
-if (!["vendedor", "gerente"].includes(tipo)) {
-  throw new Error("Tipo inválido");
-}
-
-const usuarioExistente = await Usuario.findOne({
-  where: { email },
-  transaction,
-});
-
-if (usuarioExistente) {
-  throw new Error("Email já cadastrado");
-}
-
-const senhaHash = await bcrypt.hash(senha, 10);
-
-const novoUsuario = await Usuario.create({
-  nome,
-  email,
-  senha: senhaHash,
-  telefone,
-  tipo: "vendedor",
-}, { transaction });
-
-const novoVendedor = await Vendedor.create({
-  id_usuario: novoUsuario.id_usuario,
-  tipo,
-}, { transaction });
-
-await transaction.commit();
-
-return res.status(201).json({
-  message: "Funcionário cadastrado",
-  id: novoVendedor.id_usuario,
-});
-
-} catch (err) {
-await transaction.rollback();
-
-
-return res.status(400).json({
-  erro: err.message,
-});
-}
+    if (!nome || !email || !senha || !tipo) {
+      throw new Error("Dados obrigatórios faltando");
+    }
+    
+    if (!["vendedor", "gerente"].includes(tipo)) {
+      throw new Error("Tipo inválido");
+    }
+    
+    const usuarioExistente = await Usuario.findOne({
+      where: { email },
+      transaction,
+    });
+    
+    if (usuarioExistente) {
+      throw new Error("Email já cadastrado");
+    }
+    
+    const senhaHash = await bcrypt.hash(senha, 10);
+    
+    const novoUsuario = await Usuario.create({
+      nome,
+      email,
+      senha: senhaHash,
+      telefone,
+      tipo: "vendedor",
+    }, { transaction });
+    
+    const novoVendedor = await Vendedor.create({
+      id_usuario: novoUsuario.id_usuario,
+      tipo,
+    }, { transaction });
+    
+    await transaction.commit();
+    
+    return res.status(201).json({
+      message: "Funcionário cadastrado",
+      id: novoVendedor.id_usuario,
+    });
+    
+    } catch (err) {
+    await transaction.rollback();
+    
+    return res.status(400).json({
+      erro: err.message,
+    });
+  }
 }
 
 
